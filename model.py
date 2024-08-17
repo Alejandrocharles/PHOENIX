@@ -332,7 +332,7 @@
 #                   f"Packages stored: {self.total_packages_stored}, "
 #                   f"Packages delivered: {self.total_packages_delivered}")
 
-
+##sopa
 
 
 from mesa import Agent, Model
