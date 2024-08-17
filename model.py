@@ -440,6 +440,7 @@ class LGVAgent(Agent):
         else:
             self.recalculate_path()
 
+
     def is_out_of_bounds(self, pos):
         x, y = pos
         return not (0 <= x < self.model.grid.width and 0 <= y < self.model.grid.height)
@@ -711,3 +712,5 @@ class WarehouseModel(Model):
         possible_positions = self.grid.get_neighborhood(robot.pos, moore=True, include_center=False)
         robot.destination = self.random.choice(possible_positions)
         robot.path = robot.a_star_search(robot.destination)
+
+    ##* Hola te amo mucho
