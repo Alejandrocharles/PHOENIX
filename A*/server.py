@@ -1,4 +1,9 @@
-
+# shelves initialized  in 0 
+# 3 types of packages id = 001, 002, 003
+# start positions predefined for different options 5 to 10 robots, fully charged batteries
+# the user sets a maximum simutlation time
+# Each robot has a battery discharge profile influenced by actions and distance traveled.
+# central robot that tells the robots what path they will follow
 
 import mesa
 from mesa.visualization.modules import CanvasGrid, ChartModule
@@ -7,7 +12,8 @@ from model import WarehouseModel, LGVAgent, Shelf, Truck, ChargingStation, Packa
 def agent_portrayal(agent):
     if isinstance(agent, LGVAgent):
         portrayal = {"Shape": "circle", "Filled": "true", "Color": "Cyan", "Layer": 1, "r": 0.5,
-                     "text": f"{agent.battery:.0f}%", "text_color": "black"}
+
+        }
         if agent.carrying_package:
             portrayal["Color"] = "Yellow"  
     elif isinstance(agent, Shelf):
@@ -16,9 +22,6 @@ def agent_portrayal(agent):
     elif isinstance(agent, Truck):
         portrayal = {"Shape": "rect", "Filled": "true", "Layer": 0, "w": 0.9, "h": 0.9, "text_color": "Black",
                      "Color": "#ccbeaf", "text": "🚚 IN" if agent.truck_type == "unload" else "🚚 OUT"}
-    elif isinstance(agent, ChargingStation):
-        portrayal = {"Shape": "rect", "Filled": "true", "Layer": 0, "w": 0.9, "h": 0.9, "text_color": "Black",
-                     "Color": "green", "text": "⚡"}
     elif isinstance(agent, Package):
         portrayal = {"Shape": "rect", "Filled": "true", "Layer": 0, "w": 0.5, "h": 0.5, "Color": "Brown"}
     else:
