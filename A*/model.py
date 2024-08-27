@@ -8,9 +8,9 @@ import heapq
 import random
 
 class Package(Agent):
-    def __init__(self, unique_id, model, package_type):
+    def __init__(self, unique_id, model, ):
         super().__init__(unique_id, model)
-        self.package_type = package_type
+        self. = 
 
 class LGVAgent(Agent):
     def __init__(self, unique_id, model):
@@ -244,8 +244,8 @@ class WarehouseModel(Model):
         # Distribute initial packages randomly across shelves
         for _ in range(min(k * len(shelves), initial_packages)):
             shelf = random.choice(shelves)
-            package_type = random.choice(package_types)
-            package = Package(self.next_id(), self, package_type)
+             = random.choice(package_types)
+            package = Package(self.next_id(), self, )
             if shelf.add_package(package):
                 self.grid.place_agent(package, shelf.pos)
                 self.total_packages_stored += 1
@@ -262,8 +262,8 @@ class WarehouseModel(Model):
 
         # Add remaining packages to unload truck
         for _ in range(initial_packages - min(k * len(shelves), initial_packages)):
-            package_type = random.choice(package_types)
-            package = Package(self.next_id(), self, package_type)
+             = random.choice(package_types)
+            package = Package(self.next_id(), self, )
             self.unload_truck.packages.append(package)
 
         # Predefined positions for LGVs
