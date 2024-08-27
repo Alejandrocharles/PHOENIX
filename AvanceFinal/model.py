@@ -1,8 +1,6 @@
-
-
 from mesa.model import Model
 
-from agent import Package, Shelf, Truck, LGVAgent, VisualTruck
+from agent import Package, Shelf, Truck, LGVAgent, VisualTruck, Battery
 
 from mesa.time import RandomActivation
 from mesa.space import MultiGrid
@@ -29,7 +27,7 @@ class WarehouseModel(Model):
         self.total_packages_delivered = 0
 
 
-
+        self.battery_positions = [(1, 0), (1, 1), (3, 0), (3, 1), (5, 0), (5, 1)]
 
 
         # Add shelves
@@ -83,6 +81,14 @@ class WarehouseModel(Model):
 
 
         }
+
+        batteries = []
+        for pos in self.battery_positions:
+            battery = Battery(self.next_id(), self)
+            self.grid.place_agent(battery, pos)
+            self.schedule.add(battery)
+            batteries.append(battery)
+
         shelves = []
         for pos in shelf_positions:
             shelf = Shelf(self.next_id(), self)
@@ -94,16 +100,7 @@ class WarehouseModel(Model):
         # Add three types of packages
         package_types = ["Beer 1", "Beer 2", "Beer 3"]
         
-        # Distribute initial packages randomly across shelves
-        for _ in range(min(k * len(shelves), 0)):
-            shelf = random.choice(shelves)
-            package_type = random.choice(package_types)
-            package = Package(self.next_id(), self, package_type)
-            if shelf.add_package(package):
-                self.grid.place_agent(package, shelf.pos)
-                self.total_packages_stored += 1
-
-
+    
         # Add trucks at fixed positions
         self.unload_truckVISUAL = VisualTruck(self.next_id(), self, "unload")
         self.grid.place_agent(self.unload_truckVISUAL, self.UNLOAD_TRUCK_POSITION)
@@ -126,10 +123,9 @@ class WarehouseModel(Model):
         self.delivering_to_load_truck = False
         self.phase_size = 10  # Number of packages after which to switch tasks
         
-        # # Add remaining packages to unload truck
+        # 
         for _ in range(initial_packages - min(k * len(shelves), initial_packages)):
-            package_type = random.choice(package_types)
-            package = Package(self.next_id(), self, package_type)
+            package = Package(self.next_id(), self, )
             self.unload_truck.packages.append(package)
 
         # Predefined positions for LGVs
@@ -146,9 +142,18 @@ class WarehouseModel(Model):
                 "Packages in Load Truck": lambda m: len(m.load_truck.packages),
                 "Packages in Shelves": lambda m: m.total_packages_stored,
                 "Total Movements": lambda m: m.total_movements,
-                "Total Packages Delivered": lambda m: m.total_packages_delivered
+                "Total Packages Delivered": lambda m: m.total_packages_delivered,
+                "Average Battery Level": self.average_battery_level
             },
+            agent_reporters={
+                "Battery Level": lambda a: getattr(a, "battery", None) if isinstance(a, LGVAgent) else None
+            }
         )
+
+    def average_battery_level(self):
+        battery_levels = [agent.battery for agent in self.schedule.agents if isinstance(agent, LGVAgent)]
+        return sum(battery_levels) / len(battery_levels) if battery_levels else 0
+
 
     def next_id(self):
         self.current_id += 1
