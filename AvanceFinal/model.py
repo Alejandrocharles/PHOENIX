@@ -26,10 +26,6 @@ class WarehouseModel(Model):
         self.total_packages_stored = 0
         self.total_packages_delivered = 0
 
-
-        self.battery_positions = [(1, 0), (1, 1), (3, 0), (3, 1), (5, 0), (5, 1)]
-
-
         # Add shelves
         shelf_positions = [
             (7, 9), (7, 10), (8, 9), (8, 10), (9, 9), (9, 10),
@@ -82,12 +78,7 @@ class WarehouseModel(Model):
 
         }
 
-        batteries = []
-        for pos in self.battery_positions:
-            battery = Battery(self.next_id(), self)
-            self.grid.place_agent(battery, pos)
-            self.schedule.add(battery)
-            batteries.append(battery)
+        
 
         shelves = []
         for pos in shelf_positions:
@@ -129,12 +120,21 @@ class WarehouseModel(Model):
             self.unload_truck.packages.append(package)
 
         # Predefined positions for LGVs
-        lgv_positions = [(0, 2), (0, 3), (0, 4), (0, 5), (0, 6),(0,7),(0,8)]
+        lgv_positions = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]
         for i in range(min(num_lgvs, len(lgv_positions))):
             pos = lgv_positions[i]
             lgv = LGVAgent(self.next_id(), self)
-            self.schedule.add(lgv)
             self.grid.place_agent(lgv, pos)
+            lgv.on_grid(pos)  # Set the spawn position
+            self.schedule.add(lgv)
+
+        self.battery_positions = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]
+        for i in range(min(num_lgvs, len(lgv_positions))):
+            pos = self.battery_positions[i]
+            battery = Battery(self.next_id(), self)
+            self.schedule.add(battery)
+            self.grid.place_agent(battery, pos)
+
 
         self.datacollector = DataCollector(
             model_reporters={
@@ -257,13 +257,9 @@ class WarehouseModel(Model):
         for agent in self.schedule.agents:
             if isinstance(agent, LGVAgent):
                 robot_data = {
-                    "id": agent.unique_id,
-                    "path": agent.path_taken  # Include the path taken with actions
+                    "spawnPosition": {"x": agent.spawn_position[0], "y": agent.spawn_position[1]},
+                    "path": [{"x": pos["position"][0], "y": pos["position"][1]} for pos in agent.path_taken]
                 }
                 robots_data.append(robot_data)
 
-        # Save to a JSON file
-        with open('robot_paths.json', 'w') as f:
-            json.dump(robots_data, f, indent=4)
-
-        print("Paths have been saved to robot_paths.json")
+        return {"robots": robots_data}
