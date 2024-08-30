@@ -14,6 +14,8 @@ class Battery(Agent):
 class LGVAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
+        # Keep track of the spawn position (initial position)
+        self.spawn_position = None
         # Initially None, this attribute keeps track of the package the agent is carrying.
         self.carrying_package = None
         # The target location where the agent is heading.
@@ -39,6 +41,12 @@ class LGVAgent(Agent):
         # Keeps track of positions and actions the agent has taken.
         self.path_taken = []
 
+    def on_grid(self, pos):
+        self.spawn_position = pos
+        self.pos = pos  # Ensure the agent knows its position
+
+
+
     def step(self):
         # Debug: Print the robot's battery level each step.
         print(f"Robot {self.unique_id} battery level: {self.battery}%")
@@ -55,7 +63,8 @@ class LGVAgent(Agent):
             self.move_along_path()
             return
 
-        # Normal operations (picking up and delivering packages).
+        # Normal operations (picking up and delivering packages)
+        
         if not self.carrying_package:
             if self.destination is None:
                 self.destination = self.model.unload_for_agent
@@ -155,17 +164,17 @@ class LGVAgent(Agent):
         if pos in self.model.battery_positions and not self.charging:
             return True
         return False
-
     def move_along_path(self):
         if self.path:
             next_pos = self.path[0]
-            # Prevent moving to a battery position unless charging
             if (not self.is_position_occupied(next_pos) and
                 not self.is_out_of_bounds(next_pos) and
                 not self.is_position_occupied_by_obstacle(next_pos) and
                 (self.charging or not self.is_battery_position(next_pos))):
+                
+                # Move to the next position
                 self.path.pop(0)
-                self.path_taken.append({"position": list(next_pos), "action": "move"})
+                self.path_taken.append({"position": list(next_pos), "action": "move"})  # Ensure this line is present
                 self.model.grid.move_agent(self, next_pos)
                 self.movements += 1
                 self.discharge_battery()
@@ -176,6 +185,7 @@ class LGVAgent(Agent):
                     self.attempt_alternative_move()
         else:
             self.recalculate_path()
+
 
     def is_out_of_bounds(self, pos):
         x, y = pos
