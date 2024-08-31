@@ -89,7 +89,8 @@ class LGVAgent(Agent):
             print(f"Robot {self.unique_id} has run out of battery and is unable to move.")
     
     def charge_battery(self):
-        if self.pos in self.model.battery_positions:
+        battery_agents = [agent for agent in self.model.grid.get_cell_list_contents([self.pos]) if isinstance(agent, Battery)]
+        if battery_agents:
             self.battery += 5  # Charge rate per step
             if self.battery >= 100:
                 self.battery = 100
@@ -102,17 +103,36 @@ class LGVAgent(Agent):
             else:
                 print(f"Robot {self.unique_id} is charging. Current battery level: {self.battery}%.")
         else:
-            # If the robot moved off the battery position, move it back.
+            # If the robot is not on a battery position, recalculate path to the nearest battery
             print(f"Robot {self.unique_id} is not on a battery position, recalculating path to charge.")
             self.destination = self.find_nearest_battery()
-            self.path = self.a_star_search(self.destination)
-            self.move_along_path()
+            if self.destination:
+                self.path = self.a_star_search(self.destination)
+                self.move_along_path()
+
 
     def find_nearest_battery(self):
-        batteries = [agent for agent in self.model.schedule.agents if isinstance(agent, Battery)]
-        nearest_battery = min(batteries, key=lambda battery: self.manhattan_distance(self.pos, battery.pos))
+    # Get all the positions where Battery agents are placed
+        batteries = [(agent.pos, agent) for agent in self.model.schedule.agents if isinstance(agent, Battery)]
+        
+        # Filter out batteries that are already occupied by other robots
+        available_batteries = [
+            (pos, battery) for pos, battery in batteries 
+            if not any(isinstance(agent, LGVAgent) for agent in self.model.grid.get_cell_list_contents(pos))
+        ]
+        
+        # If there are no available batteries, return None
+        if not available_batteries:
+            print(f"Robot {self.unique_id}: No available battery positions found.")
+            return None
+
+        # Find the nearest available battery position
+        nearest_battery_pos, nearest_battery = min(available_batteries, key=lambda battery: self.manhattan_distance(self.pos, battery[0]))
+        
+        # Set charging to True and return the position
         self.charging = True
-        return nearest_battery.pos
+        return nearest_battery_pos
+
 
     def pick_up_package(self):
         unload_truck = self.model.grid.get_cell_list_contents([self.model.unload_for_agent])[0]
@@ -164,17 +184,20 @@ class LGVAgent(Agent):
         if pos in self.model.battery_positions and not self.charging:
             return True
         return False
+    
     def move_along_path(self):
         if self.path:
             next_pos = self.path[0]
+            # Ensure the robot only moves to a battery position if charging and a battery exists there
+            battery_exists_at_pos = any(isinstance(agent, Battery) for agent in self.model.grid.get_cell_list_contents([next_pos]))
             if (not self.is_position_occupied(next_pos) and
                 not self.is_out_of_bounds(next_pos) and
                 not self.is_position_occupied_by_obstacle(next_pos) and
-                (self.charging or not self.is_battery_position(next_pos))):
+                (self.charging and battery_exists_at_pos or not self.is_battery_position(next_pos))):
                 
                 # Move to the next position
                 self.path.pop(0)
-                self.path_taken.append({"position": list(next_pos), "action": "move"})  # Ensure this line is present
+                self.path_taken.append({"position": list(next_pos), "action": "move"})
                 self.model.grid.move_agent(self, next_pos)
                 self.movements += 1
                 self.discharge_battery()
@@ -185,6 +208,8 @@ class LGVAgent(Agent):
                     self.attempt_alternative_move()
         else:
             self.recalculate_path()
+
+
 
 
     def is_out_of_bounds(self, pos):
@@ -324,4 +349,3 @@ class Shelf(Agent):
     @property
     def current_load(self):
         return len(self.packages)
-
