@@ -9,7 +9,7 @@ Phoenix is a 3D warehouse automation software developed for E80, designed to aut
 
 ![Phoenix 3D Warehouse Simulation](PHOENIX.png)
 ![Phoenix 3D Warehouse Simulation](SIMULATION.png)
-![Phoenix 3D Warehouse Simulation](Phoenix_collaborators.png)
+![Phoenix 3D Warehouse Simulation](Phoenix_collaborators.jpg)
 
 ## Features
 
